@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social comment</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+</head>
+
+<body>
+    <div style="width: 100%;align-items: center ">
+        <div style="width: 70%; margin: 0 auto;">
+            <div>   
+                <div style="border: 2px solid white; 
+                            border-radius: 0 0 10px 10px; 
+                            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+                            ">
+                    <h1 style="color: blue; font-size:30px; font-family: sans-serif;font-weight: 900; padding: 0 10px 0 10px">SOCIAL COMMENT</h1>
+                </div>
+
+                <div style="margin: 50px 0 50px 0;">
+                    
+                    <div>
+                        <label for="user_input" style="font-family: sans-serif; font-weight: 600; color:red">Enter Text</label>
+                    </div>
+
+                    <div style="width: 100%;align-items: center; margin-top: 20px; margin-bottom: 20px">
+                        <div style="width: 80%; margin: 0 auto; ">
+                            <div style="width: 90%; margin: 0 auto;display:flex; justify-content:space-between; position: relative;">
+                                <div style="position: absolute; left: 10px; top: 45%; transform: translateY(-50%);">
+                                    ✍️
+                                </div>
+                              <input type="text" id="user_input" name="user_input" style="border-radius:14px;
+                                                                        height: 38px; 
+                                                                        width: 75%; 
+                                                                        padding: 0 35px 0 35px; 
+                                                                        font-size: 14px;
+                                                                        font-weight: 600;
+                                                                        background-color:antiquewhite;
+                                                                        border: 1px solid #ccc; /* Border color */
+                                                                        ::placeholder {
+                                                                            color: #999;
+                                                                        }"
+                                                                        required>
+
+                                    <button type="submit" onclick="PREDICT_SENTIMENT()" style="width:80px; height: 42px ;
+                                                                font-size: 18px; 
+                                                                border-radius:14px;
+                                                                color: red;
+                                                                background-color:aquamarine;
+                                                                font-weight: 900;
+                                                                transition: background-color 0.3s;">🔎</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                    <div style="display:flex">
+                        <div style="font-family: sans-serif; font-weight: 600; color:red">
+                            Result
+                        </div>
+
+                        <div style="margin-top: 40px; width:80%">
+                            <div style="display:flex; ">
+                                <div>
+                                    <div style="font-family: sans-serif; font-weight: 800; background-color:rgba(12, 201, 226, 0.5);
+                                                        padding: 8px 11px 8px 11px; border-radius: 8px; justify-content: center; align-items:center;display:flex">
+                                        Sentence
+                                    </div>
+                                </div>
+                                <div id = "input_text_show" style="justify-content: center; align-items:center;display:flex; margin-left: 40px; font-weight: 500; font-size: 20px"></div>
+                        </div>
+                            <div style="display: flex; margin-top:20px">
+                                <div>
+                                    <div style="font-family: sans-serif; font-weight: 800;  background-color:rgba(12, 201, 226, 0.5);
+                                    padding: 8px; border-radius: 8px">
+                                        Sentiment
+                                    </div>
+                                </div >
+                                <div id = "sentiment_show" style="justify-content: center; align-items:center;display:flex;margin-left: 40px; font-weight: 800; font-size: 20px; color:red "></div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div style="display: flex; align-items: center;">
+                <h2 style="font-family: sans-serif; font-weight: 600;align-items: center; justify-content:center">History</h2>
+                <button onclick="toggleChart()" id="button_showChart" style="height: 40px; 
+                                                        width: 40px; 
+                                                        font-size:20px; 
+                                                        align-items: center; 
+                                                        justify-content:center;
+                                                        margin-left: 20px;
+                                                        border-radius: 10px;
+                                                        border-color: white;
+                                                        background-color: #fff;
+                                                        border-width: thin;">📈</button>
+            </div>
+            <div style="max-height: 300px; display:flex; max-width:100%; justify-content: space-between; ">
+                <canvas id="myChart" style="height: 0;"></canvas>
+                <canvas id="myChart2" style="height: 0;"></canvas>
+            </div>
+            <div class="table-container">
+                <table class = "table1">
+                    <tr>
+                        <th>Sentence</th>   
+                        <th>Sentiment</th>
+                    </tr>
+                    {% for entry in history %}
+                        <tr>
+                            <td id = "history_0">{{ entry[0] }}</td>
+                            <td id = "history_1">{{ entry[1] }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>       
+    </div>
+
+<!-- Script -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    var reloadChart;
+    function PREDICT_SENTIMENT() {
+        var inputElement = document.getElementById('user_input');
+        var text = inputElement.value.trim();
+        if (!text) {
+            inputElement.value = "";
+            alert("Please enter text!!!");
+            return;
+        }
+
+        axios.post('/PREDICT', { text: text })
+            .then(function (response) {
+                document.getElementById('input_text_show').innerText = response.data.input;
+                document.getElementById('sentiment_show').innerText = response.data.sentiment;
+                inputElement.value = "";
+                document.getElementById('button_showChart').innerText = "🔄";
+                reloadChart = true;
+            })
+            .catch(function (error) {
+                console.error(error);
+            });
+    }
+
+    //show bảng history
+    // Lắng nghe sự kiện SSE từ /stream
+    const eventSource = new EventSource('/stream');
+
+    // Xử lý mỗi khi có sự kiện được gửi từ server
+    eventSource.onmessage = function(event) {
+        const history = JSON.parse(event.data);
+        // Cập nhật bảng dữ liệu
+        const table = document.querySelector('.table1');
+        table.innerHTML = '<tr><th>Sentence</th><th>Sentiment</th></tr>';
+        history.forEach(entry => {
+            const row = `<tr><td>${entry[0]}</td><td>${entry[1]}</td></tr>`;
+            table.innerHTML += row;
+        });
+    };
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    var chartVisible = false;
+    var myChart;  // Variable to store the chart instance
+    var myChart2;
+
+    function toggleChart() {
+        chartVisible = !chartVisible;
+        if (reloadChart) {
+            reloadChart = false;
+            toggleChart();
+        }
+
+        if (chartVisible) {
+            document.getElementById('button_showChart').innerText = "↩️";
+        } else {
+            document.getElementById('button_showChart').innerText = "📈";
+        }
+        if (chartVisible) {
+            // Fetch data and update chart
+            fetchDataAndUpdateChart();
+        } else {
+            // Destroy the chart instance when hiding the chart
+            if (myChart) {
+                myChart.destroy();
+            }
+            if (myChart2) {
+                myChart2.destroy();
+            }
+        }
+    }
+
+    function fetchDataAndUpdateChart() {
+        axios.get('/getChartData')
+            .then(function (response) {
+                var data = response.data;
+                updateChart(data);
+            })
+            .catch(function (error) {
+                console.error(error);
+            });
+    }
+
+    function updateChart(data) {
+        var ctx1 = document.getElementById('myChart').getContext('2d');
+        var ctx2 = document.getElementById('myChart2').getContext('2d');
+
+        // Destroy the current instances before creating new ones
+        if (myChart) {
+            myChart.destroy();
+        }
+
+        if (myChart2) {
+            myChart2.destroy();
+        }
+
+        var labels = [
+            "Enjoyment",
+            "Disgust",
+            "Sadness",
+            "Anger",
+            "Surprise",
+            "Fear",
+            "Other"
+        ];
+        
+        myChart = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Frequency',
+                    data: labels.map(label => data.filter(d => d === label).length),
+                    backgroundColor: [
+                        'rgba(75, 192, 192)',
+                        'rgba(255, 99, 132)',
+                        'rgba(255, 205, 86)',
+                        'rgba(255, 159, 64)',
+                        'rgba(54, 162, 235)',
+                        'rgba(153, 102, 255)',
+                        'rgba(201, 203, 207)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 205, 86, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(201, 203, 207, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                animation: {
+                    duration: 1000, // Set animation duration in milliseconds
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    }
+                }
+            }
+        });
+        
+        myChart2 = new Chart(ctx2, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Frequency',
+                    data: labels.map(label => data.filter(d => d === label).length),
+                    backgroundColor: [
+                        'rgba(75, 192, 192)',
+                        'rgba(255, 99, 132)',
+                        'rgba(255, 205, 86)',
+                        'rgba(255, 159, 64)',
+                        'rgba(54, 162, 235)',
+                        'rgba(153, 102, 255)',
+                        'rgba(201, 203, 207)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 205, 86, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(201, 203, 207, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                animation: {
+                    duration: 1000, // Set animation duration in milliseconds
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+
+<style>
+    .table-container {
+        max-height: 300px; 
+        overflow-y: auto; 
+    }
+    .table1 {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px; 
+    }
+    .table1 th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+        font-family: sans-serif;    
+    }
+    .table1 th {
+        background-color: #f2f2f2;
+        font-family: sans-serif;
+    }
+</style>
+
+</html>
